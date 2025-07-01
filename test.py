@@ -1,5 +1,69 @@
 import cv2
 import mediapipe as mp
+from ear import CheckEAR
+
+import pyautogui
+import time
+import math
+
+
+
+
+
+
+
+frameCount = 0
+startTime = time.time()
+fps = 0
+
+class LeftEye:
+    def __init__(self):
+        self.toggleFlag = False
+        self.closedFlag = False
+        self.lastClick = 0
+        self.coolDown = 0.7
+
+    def toggle(self):
+        self.toggleFlag = not self.toggleFlag
+        # print(f"Toggle: {self.toggleFlag}")
+
+    def checkLeftEye(self, leftEyePos):
+        if self.toggleFlag:
+            if CheckEAR(leftEyePos, 0.8):
+                pyautogui.click()
+                print('left click (tog)')
+            return
+
+        if CheckEAR(leftEyePos, 0.75):
+            if not self.closedFlag and (time.time() - self.lastClick) > self.coolDown:
+                pyautogui.click()
+                self.closedFlag = True
+                self.lastClick = time.time()
+                print('left click')
+        else:
+            self.closedFlag = False
+
+
+class RightEye:
+    def __init__(self):
+        self.closedFlag = False
+        self.lastClick = 0
+        self.coolDown = 2
+
+    def checkRightEye(self, rightEyePos):
+        if CheckEAR(rightEyePos, 0.8):
+            if not self.closedFlag and (time.time() - self.lastClick) > self.coolDown:
+                pyautogui.rightClick()
+                self.closedFlag = True
+                self.lastClick = time.time()
+                print('right click')
+        else:
+            self.closedFlag = False
+
+
+
+leftEye = LeftEye()
+rightEye = RightEye()
 
 # Init mesh
 mp_face_mesh = mp.solutions.face_mesh
@@ -37,6 +101,7 @@ while cap.isOpened():
         print("Unable to read from camera")
         continue
 
+
     # OpenCV loves BGR for some reason
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     frame_rgb.flags.writeable = False
@@ -47,39 +112,87 @@ while cap.isOpened():
 
     frame_rgb.flags.writeable = True
     frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
+
+    LEFT_EYE_POINTS = [362, 380, 373, 263, 387, 385]
+    RIGHT_EYE_POINTS = [33, 160, 158, 133, 153, 144]
+    leftEyePos = []
+    rightEyePos = []
     
-    RIGHT_EYE_INDICES = [33, 160, 158, 133, 153, 144]
-    eyePoints = []
+    RIGHT_EYEBROW_INDICES = [63, 105, 66, 107, 65, 52, 53]
+
+    rightBrowPos = []
+    
     if results.multi_face_landmarks:
-        # face_landmarks look like this:
-                #   NormalizedLandmark #0:
-                #   x: 0.5971359014511108
-                #   y: 0.485361784696579
-                #   z: -0.038440968841314316
         for face_landmarks in results.multi_face_landmarks:
             for idx, landmark in enumerate(face_landmarks.landmark):
 
                 # Example: Draw a small circle at landmark index 1 (nose tip)
-                if idx in RIGHT_EYE_INDICES:
+                if idx in LEFT_EYE_POINTS:
                     x = int(landmark.x * frame.shape[1])  # Convert to coords of frame
                     y = int(landmark.y * frame.shape[0]) 
-                    eyePoints.append([x,y])
+                    leftEyePos.append([x,y])
                     cv2.circle(frame_bgr, (x, y), 2, (0, 255, 0), -1)  
-        
-        print(eyePoints)
-    cv2.imshow('Mediapipe Face Mesh', frame_bgr)
+                elif idx in RIGHT_EYE_POINTS:
+                    x = int(landmark.x * frame.shape[1])  # Convert to coords of frame
+                    y = int(landmark.y * frame.shape[0]) 
+                    rightEyePos.append([x,y])
+                    cv2.circle(frame_bgr, (x, y), 2, (0, 0, 255), -1)
 
-    if cv2.waitKey(1) == ord('q'):
+                elif idx in RIGHT_EYEBROW_INDICES:
+                    x = int(landmark.x * frame.shape[1])
+                    y = int(landmark.y * frame.shape[0])
+                    rightBrowPos.append(y)
+                    cv2.circle(frame_bgr, (x, y), 2, (255, 0, 0), -1)
+
+                
+
+        rightEye.checkRightEye(rightEyePos)
+        leftEye.checkLeftEye(leftEyePos)
+        
+
+   
+    frameCount += 1
+    if (time.time() - startTime) >= 1.0:
+        fps = frameCount
+        startTime = time.time()
+        frameCount = 0
+        
+    
+
+   
+    cv2.putText(frame_bgr, f"FPS: {fps}", (10, 45), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
+    cv2.putText(frame_bgr, f"Left Toggle: {leftEye.toggleFlag}", (10,20), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
+
+    # add all stats here
+    cv2.imshow('Blinker', frame_bgr)
+
+    key = cv2.waitKey(1)
+    if key == ord('q'):
         break
+    if key == ord('t'):
+        leftEye.toggle()
+        #left click toggle (no cooldown)
 
 cap.release()
 cv2.destroyAllWindows()
 
 
-# RIGHT EYE
+
+
+# LEFT EYE
 # p1 = 33
 # p2 = 160
 # p3 = 158
 # p4 = 133
 # p5 = 153
 # p6 = 144
+
+
+# RIGHT EYE
+# p1 = 362
+# p2 = 380
+# p3 = 374
+# p4 = 263
+# p5 = 386
+# p6 = 385
+
