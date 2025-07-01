@@ -9,7 +9,6 @@
   - Mouth (left, right, open, closed)
 
 - Nose joystick
-- Head flick for massive movements
 
 - Open app
 - Calibrate
