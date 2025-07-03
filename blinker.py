@@ -8,8 +8,10 @@ import socket
 from ear import calc_EAR
 from utils import calc_3D_dist
 
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(('127.0.0.1', 54000))
+from pynput import keyboard
+
+# client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# client.connect(('127.0.0.1', 54000))
 
 
 NOSE_LANDMARK = 1
@@ -19,9 +21,20 @@ RIGHT_EYEBROW_LANDMARKS = [63, 105, 66, 107, 65, 52, 53]
 
 neutral_x = None
 neutral_y = None
+prev_x = None
+prev_y = None
 
+key_state = {'q': False, 't': False, 'c': False}
 
+def on_press(key):
+    try:
+        if key.char in key_state:
+            key_state[key.char] = True
+    except AttributeError:
+        pass
 
+listener = keyboard.Listener(on_press=on_press)
+listener.start()
 
 
 
@@ -59,7 +72,7 @@ class LeftEye:
 class RightEye:     
     def __init__(self):
         self.closedFlag = False
-        self.lastClick = 0
+        self.lastClick = 0 
         self.coolDown = 2
 
     def checkRightEye(self, rightEyePos):
@@ -105,7 +118,7 @@ def cursor(frame_bgr,face_landmarks):
     EDGE_MARGIN = 50   # Pixels from screen edge to stop moving
     
     global neutral_x, neutral_y
-
+    global prev_x, prev_y
     frame_height, frame_width = frame_bgr.shape[:2]
 
     lm = face_landmarks.landmark[NOSE_LANDMARK]
@@ -115,10 +128,10 @@ def cursor(frame_bgr,face_landmarks):
 
     cv2.circle(frame_bgr, (int(x), int(y)), 4, (0, 255, 0), -1)
 
-    if neutral_x is None or neutral_y is None:
+    if (neutral_x is None or neutral_y is None) or (prev_x == int(x) and prev_y == int(y)):
         neutral_x = x
         neutral_y = y
-        print(f"Calibrated neutral at x={neutral_x:.2f}, y={neutral_y:.2f}")
+        print(f"Recalibrated neutral at x={neutral_x:.2f}, y={neutral_y:.2f}")
     else:
         dx = x - neutral_x
         dy = y - neutral_y
@@ -155,22 +168,24 @@ def cursor(frame_bgr,face_landmarks):
         
         cv2.line(frame_bgr, (int(neutral_x), int(neutral_y)), (int(x), int(y)), (0, 255, 0), 2)
 
-        # # Edge check: prevent fail-safe
+        # # Edge check: prevent fail-safes
         screen_width, screen_height = pyautogui.size()
         mouse_x, mouse_y = pyautogui.position()
-            
-        # message = f"{mouse_x} {mouse_y}"
+        
+        prev_x = int(x)
+        prev_y = int(y)
+        #print(prev_x, prev_y)
+        # message = f"{mouse_x} {mouse_y}" 
         # client.sendall(message.encode())
         
-        if move_x != 0 or move_y != 0:
-            message = f"{move_x} {move_y}"
-            client.sendall(message.encode())
+        # if move_x != 0 or move_y != 0:
+        #     message = f"{move_x} {move_y}"
+        #     client.sendall(message.encode())
         
         if (EDGE_MARGIN < mouse_x < screen_width - EDGE_MARGIN and
             EDGE_MARGIN < mouse_y < screen_height - EDGE_MARGIN):
             if move_x != 0 or move_y != 0:
                 pyautogui.moveRel(move_x, move_y)
-
 
 def main():
     # Init mesh
@@ -240,43 +255,42 @@ def main():
 
                     
 
-        cv2.putText(frame_bgr, f"Face height: {faceHeight}", (10, 80), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
-        percent = (browToChin / faceHeight) * 100
-        cv2.putText(frame_bgr, f"Brow to chin: {percent}", (10, 100), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
+            cv2.putText(frame_bgr, f"Face height: {faceHeight}", (10, 80), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
+            percent = (browToChin / faceHeight) * 100
+            cv2.putText(frame_bgr, f"Brow to chin: {percent}", (10, 100), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
 
 
-        rightEye.checkRightEye(rightEyePos)
-        leftEye.checkLeftEye(leftEyePos)
-        brow.checkBrowHeight(percent) 
-
-    
+            rightEye.checkRightEye(rightEyePos)
+            leftEye.checkLeftEye(leftEyePos)
+            brow.checkBrowHeight(percent) 
+ 
+        
         frameCount += 1
         if (time.time() - startTime) >= 1.0:
             fps = frameCount
             startTime = time.time()
             frameCount = 0
-            
+                
 
 
-        cv2.putText(frame_bgr, "'c' - recalibrate | 't' - toggle left | 'q' - quit", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        cv2.putText(frame_bgr, " 't' - toggle left | 'q' - quit", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
         cv2.putText(frame_bgr, f"FPS: {fps}", (10, 40), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
         cv2.putText(frame_bgr, f"Left Toggle: {leftEye.toggleFlag}", (10,60), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
         cv2.putText(frame_bgr, f"Left: {leftEye.closedFlag}, Right: {rightEye.closedFlag}", (10,300), cv2.FONT_HERSHEY_PLAIN, 1, (255, 0, 0), 2)
         cv2.putText(frame_bgr, f"Jump: {brow.upFlag}, Crouch: {brow.downFlag}", (10,320), cv2.FONT_HERSHEY_PLAIN, 1, (255, 0, 0), 2)
 
+        cv2.namedWindow('Blinker', cv2.WINDOW_NORMAL)
+        cv2.setWindowProperty('Blinker', cv2.WND_PROP_TOPMOST, 1)
 
         cv2.imshow('Blinker', frame_bgr)
+        key = cv2.waitKey(10)
 
-        key = cv2.waitKey(1)
-        if key == ord('q'):
-            break 
-        if key == ord('t'):
+        if key_state['q']:
+            break
+        if key_state['t']:
             leftEye.toggle()
-        if key == ord('c'):
-            global neutral_x, neutral_y            
-            neutral_x = None
-            neutral_y = None
-            print("Recalibrated neutral point.")
+            key_state['t'] = False
+
             
     cap.release()
     cv2.destroyAllWindows()
