@@ -1,15 +1,5 @@
 - ~~Figure how to view the data of the mesh~~
 
-- Capture a wide variety of movements
-
-  - Head zone
-  - Both winks
-  - Blink
-  - Brows up/down
-  - Mouth (left, right, open, closed)
-
-- Nose joystick
-
 - Open app
 - Calibrate
 - Ask for open left eye, closed left eye. Then right. Calibrate threshold based on this
