@@ -1,21 +1,37 @@
-# BLINKER
+# Blinker - Your face is the mouse
 
-WORK IN PROGRESS
+## Quick Start Tutorial
 
-## V2 Demos
+### Requirements
+
+- WebCam
+- Python 3.11
+- CMake (at least 3.10)
+
+### Setup
+
+1. **Create a python env**
+   ```bash
+   python -m venv BlinkerEnv
+   BlinkerEnv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+2. **Build C++ server**
+   ```bash
+   mkdir build
+   cmake -S . -B build
+   cmake --build build --config Release
+   ```
+3. **Run Blinker**
+   ```bash
+   python blinker.ev
+   ```
+
+## Demos
 
 ### CS2
 
+Trig based cursor inspired by Jason Orlosky: https://www.youtube.com/watch?v=hImmJDTgXjw
 ![alt text](misc/v2.gif)
-
-- V2 Cursor tracking inspired by Jason Orlosky: https://www.youtube.com/watch?v=hImmJDTgXjw
-
-## V1 Demos
-
-### Blinking
-
-![alt text](misc/demo1.gif)
-
-### Counter Strike 2
 
 ![alt text](misc/M4.gif)

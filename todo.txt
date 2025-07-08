@@ -1,0 +1,2 @@
+- build in release mode
+- gitignore other shit

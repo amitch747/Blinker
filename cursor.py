@@ -6,8 +6,9 @@ import threading
 import pyautogui
 
 from utils import draw_text_pil
+from settings import DEQUE_FRAMES, DEFAULT_SENS, BOOSTED_SENS, DEADZONE, BOOSTZONE
 
-DEADZONE = 10
+
 MOUSE_MUTEX = threading.Lock()
 WIDTH, HEIGHT = pyautogui.size()
 SCREEN_CENTER_X = WIDTH // 2
@@ -15,7 +16,7 @@ SCREEN_CENTER_Y = HEIGHT // 2
 MOUSE_LOCATION = [SCREEN_CENTER_X, SCREEN_CENTER_Y]
 
 FACE_LANDMARKS = {1:"NOSE",10:"TOP",152:"BOTTOM",234:"LEFT",454:"RIGHT"}
-deque_len = 9
+deque_len = DEQUE_FRAMES
 face_center_queue = deque(maxlen=deque_len)
 out_vec_queue = deque(maxlen=deque_len)
 
@@ -25,10 +26,11 @@ calibration_pitch = 0
 raw_yaw = 180
 raw_pitch = 180
 
-
+sensitivity = 0
+default_sensitivity = DEFAULT_SENS
+boosted_sensitivity = BOOSTED_SENS
 
 def move_mouse(client):
-    sensitivity = 0.05  # Adjust as needed
     while True:
         with MOUSE_MUTEX:
             x, y = MOUSE_LOCATION
@@ -42,6 +44,7 @@ def move_mouse(client):
 
 
 def calibrate_cursor():
+    global calibration_yaw, calibration_pitch
     # Reset cursor center point
     calibration_yaw = 180 - raw_yaw
     calibration_pitch = 180 - raw_pitch
@@ -97,8 +100,6 @@ def cursor(frame,face_landmarks):
     cam_out = np.array([0,0,-1])
     
 
-
-
     xz_out = np.array([avg_out_unit[0], 0, avg_out_unit[2]])
     xz_out /= np.linalg.norm(xz_out)
     yaw = np.degrees(math.acos(np.clip(np.dot(cam_out, xz_out), -1.0, 1.0)))
@@ -113,7 +114,6 @@ def cursor(frame,face_landmarks):
         
         
     #print("yaw: {:.1f} pitch: {:.1f}".format(yaw, pitch))    # if (neutral_x is None or neutral_y is None):
-
     if yaw < 0:
         yaw = abs(yaw) # Negatives become positve
     elif yaw < 180:
@@ -131,7 +131,6 @@ def cursor(frame,face_landmarks):
     yaw_bound = 20
     pitch_bound = 10
     # For example, left of screen pixels will correspond to 180-yawDeg    
-
     yaw += calibration_yaw
     pitch += calibration_pitch
 
@@ -142,7 +141,6 @@ def cursor(frame,face_landmarks):
     # 5 * HEIGHT = well past screen bound
     y_target = int(((180 + pitch_bound - pitch) / (2 * pitch_bound)) * HEIGHT)
     
-    # Need to clamp bounds
     if y_target > HEIGHT - 10:
         y_target = HEIGHT - 10
     elif y_target < 10:
@@ -154,15 +152,37 @@ def cursor(frame,face_landmarks):
         
     #print(f"Screen position: x={x_target}, y={y_target}")
 
+    deadzone_radius = DEADZONE / 2
+    sens_boost_radius = BOOSTZONE / 2
+    global sensitivity
+
     # Fill array
     with MOUSE_MUTEX:
-        MOUSE_LOCATION[0] = x_target
-        MOUSE_LOCATION[1] = y_target
+        if ((pitch < 180 - sens_boost_radius or pitch > 180 + sens_boost_radius) or (yaw < 180 - sens_boost_radius or yaw > 180 + sens_boost_radius)):
+            sensitivity = boosted_sensitivity
+        else:
+            sensitivity = default_sensitivity
+            
+        if  (180 - deadzone_radius < yaw < 180 + deadzone_radius):
+            MOUSE_LOCATION[0] = SCREEN_CENTER_X
+        else:       
+            MOUSE_LOCATION[0] = x_target      
+        if (180 - deadzone_radius < pitch < 180 + deadzone_radius):
+            MOUSE_LOCATION[1] = SCREEN_CENTER_Y
+        else:
+            MOUSE_LOCATION[1] = y_target
         
+
+    draw_text_pil(frame, f"Sens: {sensitivity}", (500, 40), (1, 174, 255))
+   
     # 100 is arbitrary, should be configurable
     ray_end = avg_center - avg_out_unit * 100
     cv2.line(frame, tuple(avg_center[:2].astype(int)), tuple(ray_end[:2].astype(int)), (1, 174, 255), 4)
     
+    cv2.circle(frame, tuple(avg_center[:2].astype(int)), int(DEADZONE), (0, 0, 128), 1)
+    cv2.circle(frame, tuple(avg_center[:2].astype(int)), int(BOOSTZONE), (0, 0, 255), 1)
+
+
     cx, cy = avg_center[:2].astype(int)
 
     #cv2.putText(frame, f"Yaw: {yaw:.1f}", (cx + 30, cy+ 10), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
