@@ -49,11 +49,16 @@ class LeftEye:
 
         if self.toggleFlag:
             if EAR_check(leftEyePos, self.thresh):
-                self.closedFlag = True
-                pyautogui.click()
-                print('left click (tog)')
+                if not self.closedFlag:
+                    self.closedFlag = True
+                    pyautogui.mouseDown()
+                    print('left mouse down (tog)')
             else:
-                self.closedFlag = False
+                if self.closedFlag:
+                    self.closedFlag = False
+                    pyautogui.mouseUp()
+                    print('left mouse up (tog)')
+                    self.closedFlag = False
             return
 
         if EAR_check(leftEyePos, self.thresh):

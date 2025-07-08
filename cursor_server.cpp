@@ -1,5 +1,3 @@
-// Receives relative dx dy via TCP and injects relative mouse movement with smoothing
-
 #include <winsock2.h>
 #pragma comment(lib,"ws2_32.lib") // winsock is not default or something, need to explicitly link
 
@@ -65,7 +63,7 @@ int main()
     bind(server, (sockaddr*)&addr, sizeof(addr));  
 
     listen(server, SOMAXCONN);
-    std::cout << "cursor_server waiting for blinker - port 54000\n";
+    std::cout << "cursor_server waiting for blinker - port 747\n";
     std::cout << std::flush;  // Force flush
 
     SOCKET client = accept(server, nullptr, nullptr);

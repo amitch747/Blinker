@@ -2,7 +2,7 @@ import subprocess
 import time
 import sys
 
-server = subprocess.Popen(["build\\Debug\\cursor_server.exe"])
+server = subprocess.Popen(["build\\Release\\cursor_server.exe"])
 time.sleep(1)
 
 client = subprocess.Popen([sys.executable,"client.py"])
