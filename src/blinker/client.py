@@ -44,9 +44,6 @@ class LeftEye:
     
 
     def checkLeftEye(self, leftEyePos):
-        if len(leftEyePos) != 6:
-            return  
-
         if self.toggleFlag:
             if EAR_check(leftEyePos, self.thresh):
                 if not self.closedFlag:
@@ -60,15 +57,19 @@ class LeftEye:
                     print('left mouse up (tog)')
                     self.closedFlag = False
             return
-
-        if EAR_check(leftEyePos, self.thresh):
+        
+        ear = EAR_check(leftEyePos, self.thresh)
+        if ear == True:
             if not self.closedFlag and (time.time() - self.lastClick) > self.coolDown:
                 pyautogui.click()
                 self.closedFlag = True
                 self.lastClick = time.time()
                 print('left click')
-        else:
+        elif ear == False:
             self.closedFlag = False
+        else:
+            # must have been none
+            return 
 class RightEye:     
     def __init__(self):
         self.closedFlag = False
@@ -77,17 +78,18 @@ class RightEye:
         self.thresh = DEFAULT_R_THRESH
 
     def checkRightEye(self, rightEyePos):
-        if len(rightEyePos) != 6:
-            return  
-
-        if EAR_check(rightEyePos, self.thresh):
+        ear = EAR_check(rightEyePos, self.thresh)
+        if ear == True:
             if not self.closedFlag and (time.time() - self.lastClick) > self.coolDown:
                 pyautogui.rightClick()
                 self.closedFlag = True
                 self.lastClick = time.time()
                 print('right click')
+        elif ear == False:
+            self.closedFlag = False   
         else:
-            self.closedFlag = False      
+            # must have been none
+            return      
   
 
 def calibrate_eye(leftEye, rightEye):
@@ -150,7 +152,7 @@ def main():
                     # Convert to coorinates of frame
                     x = int(landmark.x * frame.shape[1]) 
                     y = int(landmark.y * frame.shape[0]) 
-                    leftEyePos.append([x,y])
+                    leftEyePos.append((x,y))
 
                     if leftEye.closedFlag == True :
                         cv2.circle(frame, (x, y), 2, (0, 255, 0), 10)  
@@ -161,7 +163,7 @@ def main():
                 elif idx in RIGHT_EYE_LANDMARKS:
                     x = int(landmark.x * frame.shape[1]) 
                     y = int(landmark.y * frame.shape[0]) 
-                    rightEyePos.append([x,y])
+                    rightEyePos.append((x,y))
                     if rightEye.closedFlag == True:
                         cv2.circle(frame, (x, y), 2, (50, 0, 255), 10)
                     else:

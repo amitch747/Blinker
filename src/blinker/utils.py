@@ -6,13 +6,6 @@ from PIL import Image, ImageDraw, ImageFont
 font = ImageFont.truetype("./misc/cs_regular.ttf", 24)
 
 
-def calc_3D_dist(lm1, lm2):
-    dx = lm1.x - lm2.x
-    dy = lm1.y - lm2.y
-    dz = lm1.z - lm2.z
-    return math.sqrt(dx*dx + dy*dy + dz*dz)
-
-
 def draw_text_pil(frame, txt, pos, color=(0,255,0)):
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     pil_img = Image.fromarray(frame_rgb)

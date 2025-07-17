@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: blinker
+Version: 0.0.0
+Summary: Mouse controller built with MediaPipe and OpenCV
+Author: Aiden Mitchell
+License: MIT
+Platform: win32
+Requires-Python: >=3.10
+Requires-Dist: numpy
+Requires-Dist: scipy
+Requires-Dist: opencv-python
+Requires-Dist: mediapipe
+Requires-Dist: pytest
