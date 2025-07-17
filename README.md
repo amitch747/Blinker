@@ -1,5 +1,7 @@
 # Blinker - Your face is the mouse
 
+![Tests](https://github.com/amitch747/Blinker/actions/workflows/tests.yaml/badge.svg)
+
 ## Controls
 
 - Face center translation applies movement commands to the cursor
