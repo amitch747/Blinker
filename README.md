@@ -55,9 +55,10 @@
 
 ## Demos
 
-### CS2
+### Version 1
+![alt text](misc/M4.gif)
 
-Trig based cursor inspired by Jason Orlosky: https://www.youtube.com/watch?v=hImmJDTgXjw
+### Version 3
 ![alt text](misc/v2.gif)
 
-![alt text](misc/M4.gif)
+Trig based cursor inspired by Jason Orlosky: https://www.youtube.com/watch?v=hImmJDTgXjw
